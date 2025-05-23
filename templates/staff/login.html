@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+        }
+
+        .login-container {
+            width: 400px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            color: #fff;
+            text-align: center;
+        }
+
+        .login-container h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .login-container label {
+            display: block;
+            margin: 10px 0 5px;
+            font-size: 1rem;
+            text-align: left;
+        }
+
+        .login-container input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        .login-container input::placeholder {
+            color: #ddd;
+        }
+
+        .login-container input:focus {
+            outline: none;
+            border: 2px solid #feb47b;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .login-container button {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .login-container button:hover {
+            background: #333;
+        }
+
+        .message-list {
+            margin-top: 15px;
+            font-size: 1rem;
+            background: rgba(255, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .login-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <i class="fas fa-user-shield login-icon"></i>
+        <h1>Admin Login</h1>
+        <form action="{{ url_for('staff_routes.login') }}" method="POST">
+            <label for="username"><i class="fas fa-user"></i> Username</label>
+            <input type="text" id="username" name="username" placeholder="Enter username" required>
+
+            <label for="password"><i class="fas fa-lock"></i> Password</label>
+            <input type="password" id="password" name="password" placeholder="Enter password" required>
+
+            <button type="submit"><i class="fas fa-sign-in-alt"></i> Login</button>
+        </form>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="message-list">
+                    {% for category, message in messages %}
+                        <p class="{{ category }}"><i class="fas fa-exclamation-circle"></i> {{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Web Application Portal | Swachh Bharat Abhiyan</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Roboto:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f4f4f4;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3 {
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .hero {
+      background: linear-gradient(120deg, #3d7ac6 0%, #5382da 70%, #4cb552 100%);
+      color: white;
+      padding: 6rem 1rem 4rem 1rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 6px 20px 0 rgba(60, 125, 200, 0.13);
+    }
+
+    .hero::before, .hero::after {
+      content: '';
+      position: absolute;
+      z-index: 0;
+      border-radius: 50%;
+      opacity: 0.12;
+      pointer-events: none;
+    }
+    .hero::before {
+      width: 340px;
+      height: 340px;
+      left: -120px;
+      top: -120px;
+      background: radial-gradient(circle at 70% 40%, #fff 20%, #3d7ac6 90%);
+    }
+    .hero::after {
+      width: 220px;
+      height: 220px;
+      right: -70px;
+      bottom: -70px;
+      background: radial-gradient(circle at 30% 70%, #fff 0%, #4cb552 100%);
+    }
+
+    /* Modern Navbar */
+        /* Navbar Styling */
+        .navbar {
+            background: rgb(rgb(102, 125, 185), rgb(56, 118, 184), blue);
+            box-shadow: 0 4px 12px rgba(67, 86, 191, 0.1);
+            padding: 0.4rem 0.7rem;
+           background-color: #0766c5;
+        }
+
+        .navbar-brand {
+            font-weight: 600;
+            font-size: 1rem;
+            color: rgb(226, 231, 240) !important;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand:hover {
+            transform: translateY(-2px);
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.85) !important;
+            font-weight: 500;
+            margin: 0 0.5rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: white !important;
+            transform: translateY(-2px);
+        }
+
+        .nav-link.active {
+            color: white !important;
+            font-weight: 600;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: white;
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        /* Main Content */
+        .container {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+
+    .section-title {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #3d7ac6;
+      margin-bottom: 1.7rem;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 16px #cfe0fa32;
+    }
+
+    /* Animated underline for section titles */
+    .section-title.text-center {
+      position: relative;
+    }
+    .section-title.text-center::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: -10px;
+      width: 60px;
+      height: 4px;
+      background: linear-gradient(90deg, #3d7ac6, #4cb552);
+      border-radius: 2px;
+      opacity: 0.5;
+      animation: underlineFade 2s infinite alternate;
+    }
+    @keyframes underlineFade {
+      to { opacity: 1; width: 80px; }
+    }
+
+    /* What is Swachh Bharat Abhiyan? icons */
+    .info-icon {
+      font-size: 2.2rem;
+      color: #4cb552;
+      margin-bottom: 0.4rem;
+      filter: drop-shadow(0 1px 6px #3d7ac640);
+    }
+
+    /* Feature Cards */
+    .card {
+      border: none;
+      border-radius: 1.2rem;
+      box-shadow: 0 4px 24px 0 rgba(60, 125, 200, 0.10);
+      transition: transform 0.18s cubic-bezier(.4,1.4,.4,1);
+      background: linear-gradient(120deg, #f4f8ff 60%, #edf9ef 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover {
+      transform: translateY(-6px) scale(1.025);
+      box-shadow: 0 10px 32px 0 rgba(60, 125, 200, 0.15);
+    }
+    .card h4 {
+      color: #3d7ac6;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    /* List checkmarks */
+    .list-unstyled li {
+      font-size: 1.1rem;
+      margin-bottom: 0.6rem;
+      letter-spacing: 0.01em;
+    }
+
+    /* Footer decorations */
+    .hover-grow {
+      transition: transform 0.3s cubic-bezier(.4,2,.4,1);
+    }
+    .hover-grow:hover {
+      transform: scale(1.25) rotate(-8deg);
+      color: #4cb552 !important;
+    }
+
+    .hover-underline {
+      position: relative;
+      display: inline-block;
+    }
+    .hover-underline::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2.5px;
+      bottom: -2px;
+      left: 0;
+      background-color: #4cb552;
+      transition: width 0.3s cubic-bezier(.4,2,.4,1);
+      border-radius: 2px;
+    }
+    .hover-underline:hover::after {
+      width: 100%;
+    }
+
+    .z-index-1 {
+      z-index: 1;
+    }
+
+    .bg-dark {
+      background-color: #343a40 !important;
+      background-image: linear-gradient(120deg, #343a40 80%, #3d7ac6 100%);
+    }
+
+    /* Decorative floating leaves in footer */
+    .leaf-float {
+      position: absolute;
+      opacity: 0.13;
+      font-size: 3.6rem;
+      pointer-events: none;
+      animation: leafFloat 12s infinite linear alternate;
+    }
+    .leaf1 { top: 8px; left: 28px; animation-delay: 0s;}
+    .leaf2 { top: 18px; right: 60px; animation-delay: 2.5s;}
+    .leaf3 { bottom: 45px; left: 80px; font-size: 2.9rem; animation-delay: 3.5s;}
+    @keyframes leafFloat {
+      0% { transform: translateY(0) rotate(-12deg);}
+      100% { transform: translateY(18px) rotate(13deg);}
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 992px) {
+      .hero {
+        padding: 4rem 1rem 2.5rem 1rem;
+      }
+      .navbar-brand {
+        font-size: 1rem;
+        margin-right: 0.7rem;
+      }
+      .section-title {
+        font-size: 1.4rem;
+      }
+      .card h4 {
+        font-size: 1.1rem;
+      }
+    }
+    @media (max-width: 768px) {
+      .hero {
+        padding: 3rem 0.1rem 1.5rem 0.1rem;
+      }
+      .nav-btn {
+        display: block;
+        width: 100%;
+        margin: 8px 0;
+        text-align: center;
+      }
+      .section-title.text-center::after {
+        width: 38px;
+      }
+      .leaf-float { display: none; }
+      .navbar-brand {
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+      }
+      .navbar .container {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .navbar-collapse {
+        width: 100%;
+      }
+    }
+    #edit{
+      padding-right: 0px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navigation Bar -->
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-broom me-2"></i>Web Application Portal For Assistance Of Swachh Bharat Abhiyan
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('user_routes.home') }}">
+                            <i class="fas fa-pen-to-square me-1"></i> Register Complaint
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('about') }}">
+                            <i class="fas fa-info-circle me-1"></i> About
+                        </a>
+                    </li>
+                    <li class="nav-item ms-lg-2">
+                        <a class="btn btn-danger" href="{{ url_for('central_routes.central_login') }}">
+                            <i class="fas fa-sign-in-alt me-1"></i> Login
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+  <!-- Hero Section -->
+  <header class="hero text-center">
+    <div class="container position-relative z-index-1">
+      <h1 class="display-4 mb-3"><i class="fas fa-broom text-success me-2"></i>Swachh Bharat Abhiyan</h1>
+      <p class="lead mb-0">A step towards a cleaner and greener India through citizen participation.</p>
+      <!-- Decorative animated leaf icons -->
+      <i class="fas fa-leaf leaf-float leaf1 text-success"></i>
+      <i class="fas fa-leaf leaf-float leaf2 text-success"></i>
+      <i class="fas fa-leaf leaf-float leaf3 text-success"></i>
+    </div>
+  </header>
+
+  <!-- What is Swachh Bharat Abhiyan? -->
+  <section class="container py-5">
+    <h2 class="section-title text-center">What is Swachh Bharat Abhiyan?</h2>
+    <p class="text-center mb-5">
+      <span class="info-icon"><i class="fas fa-info-circle"></i></span><br>
+      Swachh Bharat Abhiyan (Clean India Mission) is a national initiative launched by the Government of India on October 2,
+      2014, aiming to promote cleanliness, sanitation, and proper waste management across the country.
+    </p>
+
+    <div class="row text-center">
+      <div class="col-md-4 mb-4">
+        <span class="info-icon"><i class="fas fa-bullseye"></i></span>
+        <h5 class="mt-2 mb-2">Objectives</h5>
+        <p>Eliminate open defecation, improve waste management, and raise hygiene awareness.</p>
+      </div>
+      <div class="col-md-4 mb-4">
+        <span class="info-icon"><i class="fas fa-tasks"></i></span>
+        <h5 class="mt-2 mb-2">Key Focus Areas</h5>
+        <ul class="list-unstyled">
+          <li>✅ Construction of toilets</li>
+          <li>✅ Waste management systems</li>
+          <li>✅ Public awareness campaigns</li>
+        </ul>
+      </div>
+      <div class="col-md-4 mb-4">
+        <span class="info-icon"><i class="fas fa-users"></i></span>
+        <h5 class="mt-2 mb-2">Citizen Participation</h5>
+        <p>Every citizen plays a vital role by keeping surroundings clean and spreading awareness.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Citizen Participation Section -->
+  <section class="py-5 bg-light">
+    <div class="container">
+      <h2 class="section-title text-center">How Citizens Can Participate</h2>
+      <p class="text-center lead mb-5">Your active involvement is essential for a cleaner India. Here's how you can contribute:</p>
+
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="card p-4 shadow-sm h-100 text-center">
+            <div class="mb-3">
+              <i class="fas fa-search-location fa-2x text-success"></i>
+            </div>
+            <h4>1. Identify an Unclean Area</h4>
+            <p>Observe and report places that need cleaning in your neighborhood, streets, or public areas.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card p-4 shadow-sm h-100 text-center">
+            <div class="mb-3">
+              <i class="fas fa-map-marked-alt fa-2x text-primary"></i>
+            </div>
+            <h4>2. Report the Location</h4>
+            <p>Inform local authorities or use our portal to submit dirty location details and images.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card p-4 shadow-sm h-100 text-center">
+            <div class="mb-3">
+              <i class="fas fa-bullhorn fa-2x text-warning"></i>
+            </div>
+            <h4>3. Spread Awareness</h4>
+            <p>Encourage friends, family, and neighbors to participate in cleanliness drives and events.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="text-center py-5 bg-dark text-white position-relative">
+    <div class="container">
+      <!-- Decorative wave shape at top of footer -->
+      <div class="position-absolute top-0 start-0 w-100 overflow-hidden" style="height: 50px;">
+        <svg viewBox="0 0 500 150" preserveAspectRatio="none" style="height: 100%; width: 100%;">
+          <path d="M0.00,49.98 C149.99,150.00 349.20,-49.98 500.00,49.98 L500.00,150.00 L0.00,150.00 Z" 
+                style="stroke: none; fill: #f4f4f4;"></path>
+        </svg>
+      </div>
+      
+      <!-- Decorative floating leaves in footer -->
+      <i class="fas fa-leaf leaf-float leaf1 text-success"></i>
+      <i class="fas fa-leaf leaf-float leaf2 text-success"></i>
+      <i class="fas fa-leaf leaf-float leaf3 text-success"></i>
+      
+      <!-- Footer content with decorative elements -->
+      <div class="position-relative z-index-1">
+        <!-- Social media icons with hover effects -->
+        <div class="d-flex justify-content-center mb-4">
+          <a href="#" class="text-white mx-3 fs-4 hover-grow" aria-label="Facebook">
+            <i class="fab fa-facebook-square"></i>
+          </a>
+          <a href="#" class="text-white mx-3 fs-4 hover-grow" aria-label="Twitter">
+            <i class="fab fa-twitter-square"></i>
+          </a>
+          <a href="#" class="text-white mx-3 fs-4 hover-grow" aria-label="Instagram">
+            <i class="fab fa-instagram"></i>
+          </a>
+          <a href="#" class="text-white mx-3 fs-4 hover-grow" aria-label="LinkedIn">
+            <i class="fab fa-linkedin"></i>
+          </a>
+        </div>
+        
+       
+        
+        <!-- Copyright with decorative leaf icons -->
+        <p class="mb-0">
+          <i class="fas fa-leaf text-success me-2"></i>
+          © 2025 Web Application Portal for Swachh Bharat Abhiyan | All Rights Reserved
+          <i class="fas fa-leaf text-success ms-2"></i>
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

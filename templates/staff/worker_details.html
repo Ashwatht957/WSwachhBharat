@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Worker Details</title>
+    <!-- Google Fonts and Bootstrap for nav responsiveness & icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Roboto:wght@400;500&display=swap" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        :root {
+            --primary-color: #186fe0;
+            --secondary-color: #4cb552;
+            --dark-color: #2c3e50;
+            --light-color: #f4f4f9;
+        }
+        body {
+            font-family: 'Roboto', 'Montserrat', Arial, sans-serif;
+            margin: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .navbar {
+            background: var(--dark-color) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            font-family: 'Montserrat', sans-serif;
+            padding-top: 0.7rem;
+            padding-bottom: 0.7rem;
+        }
+        .navbar .container {
+            max-width: 100vw;
+            padding-left: 2rem !important;
+            padding-right: 6rem !important;
+            margin: 1rem;
+        }
+        .navbar-brand {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: white !important;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 6px rgba(44, 99, 190, 0.18);
+            margin-bottom: 0.25rem;
+            margin-right: 2.2rem;
+            padding-left: 1.2rem;
+        }
+        .nav-btn {
+            display: inline-block;
+            padding: 10px 24px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.15);
+            color: white !important;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(.4,2,.4,1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            font-size: 1rem;
+            letter-spacing: 0.03em;
+        }
+        .nav-btn:hover, .nav-btn:focus {
+            background: rgba(255,255,255,0.25);
+            color: #186fe0 !important;
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+            outline: none;
+            text-decoration: none;
+        }
+        .nav-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+        .nav-btn::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+        .nav-btn:focus:not(:active)::after {
+            animation: ripple 0.6s ease-out;
+        }
+        @keyframes ripple {
+            0% { transform: scale(0, 0); opacity: 0.5; }
+            100% { transform: scale(20, 20); opacity: 0; }
+        }
+        @media (max-width: 768px) {
+            .navbar-brand {
+                margin-right: 0;
+                margin-bottom: 0.5rem;
+                font-size: 1rem;
+                padding-left: 0.5rem;
+            }
+            .nav-btn {
+                display: block;
+                width: 100%;
+                margin: 8px 0;
+                text-align: center;
+            }
+            .navbar .container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .navbar-collapse {
+                width: 100%;
+            }
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 24px;
+            font-family: 'Montserrat', sans-serif;
+            color: var(--primary-color);
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .container-main {
+            max-width: 1040px;
+            margin: 40px auto 0 auto;
+            background: white;
+            padding: 28px 18px 18px 18px;
+            border-radius: 14px;
+            box-shadow: 0 6px 24px rgba(24, 111, 224, 0.09), 0 1.5px 3px rgba(76, 181, 82, 0.02);
+            overflow-x: auto; /* scroll on narrow screens */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+            background: #f8fcff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(24, 111, 224, 0.03);
+            overflow: hidden;
+        }
+
+        table, th, td {
+            border: 1px solid #c6dbf7;
+        }
+
+        th, td {
+            padding: 11px 10px;
+            text-align: left;
+            font-size: 0.98rem;
+        }
+
+        th {
+            background: linear-gradient(90deg, #186fe0 70%, #6c7b9f 100%);
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            border-top: none;
+        }
+
+        tr:hover {
+            background-color: #f0f8ff;
+        }
+
+        img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 7px;
+            box-shadow: 0 1.5px 6px #186fe034;
+        }
+
+        .button {
+            padding: 12px 24px;
+            cursor: pointer;
+            font-size: 1rem;
+            background: linear-gradient(90deg, #186fe0 70%, #516280 100%);
+            color: white;
+            border: none;
+            border-radius: 7px;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s ease, transform 0.18s cubic-bezier(.4,1.4,.4,1);
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .button:hover {
+            background: linear-gradient(90deg, #134c9d 70%, #368d43 100%);
+            transform: translateY(-2px) scale(1.04);
+        }
+
+        .back-button {
+            text-align: center;
+            margin: 24px auto 0 auto;
+            width: fit-content;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .container-main { padding: 16px 4px 8px 4px; }
+        }
+        @media (max-width: 768px) {
+            h1 { font-size: 1.35rem; }
+            .container-main { margin: 18px auto 0 auto; }
+            table { min-width: 500px; }
+            th, td { padding: 8px; font-size: 0.94rem; }
+            .button { padding: 10px 20px; font-size: 0.94rem; }
+            img { width: 50px; height: 50px; }
+        }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 1.05rem; }
+            .container-main { margin: 8px auto 0 auto; }
+            table { min-width: 400px; }
+            img { width: 40px; height: 40px; }
+            .button { padding: 8px 16px; font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand align-self-center" href="#">
+                <i class="fas fa-recycle me-2 text-success"></i>
+                Admin Portal
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navWorkerDetails">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navWorkerDetails">
+                <div class="d-flex flex-column flex-lg-row align-items-lg-center ms-lg-4 mt-2 mt-lg-0">
+                    <a class="nav-btn" href="{{ url_for('staff_routes.admin_dashboard') }}">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-main">
+        <h1>Worker Details</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Image</th>
+                    <th>Ward ID</th>
+                    <th>Visited At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if visited_links_data %}
+                    {% for link in visited_links_data %}
+                        <tr>
+                            <td>{{ link[0] }}</td>
+                            <td>{{ link[1] }}</td>
+                            <td>
+                                {% if link[2] %}
+                                    <img src="{{ link[2] }}" alt="Worker Image" />
+                                {% else %}
+                                    No Image
+                                {% endif %}
+                            </td>
+                            <td>{{ link[3] }}</td>
+                            <td>{{ link[4] }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align:center;">No worker details available.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <!-- <div class="back-button">
+            <a href="{{ url_for('staff_routes.admin_dashboard') }}" class="button">
+                <i class="fas fa-arrow-left me-2"></i>Back to Admin Dashboard
+            </a>
+        </div> -->
+    </div>
+    <!-- Bootstrap JS for navbar collapse functionality -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

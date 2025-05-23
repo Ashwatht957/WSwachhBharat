@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Admin Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Roboto:wght@400;500&display=swap" rel="stylesheet" />
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<!-- Bootstrap CSS for navbar responsiveness -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+<style>
+    :root {
+        --primary-color: #186fe0;
+        --secondary-color: #4cb552;
+        --dark-color: #2c3e50;
+        --light-color: #f4f4f9;
+    }
+    body {
+        margin: 0;
+        font-family: 'Roboto', 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f0f2f5;
+        display: flex;
+        min-height: 100vh;
+        flex-direction: row;
+    }
+
+    /* Navbar Styling */
+    .navbar {
+        background: var(--dark-color) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        padding-top: 0.7rem;
+        padding-bottom: 0.7rem;
+        font-family: 'Montserrat', sans-serif;
+        position: fixed;
+        width: 100vw;
+        z-index: 10;
+        left: 0;
+        top: 0;
+    }
+    .navbar-brand {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: white !important;
+        letter-spacing: 1px;
+        text-shadow: 0 2px 6px rgba(44, 99, 190, 0.18);
+        margin-bottom: 0.25rem;
+        margin-right: 2.2rem;
+    }
+    .nav-btn {
+        display: inline-block;
+        padding: 10px 24px;
+        margin: 0 10px;
+        border: none;
+        border-radius: 6px;
+        background: rgba(255,255,255,0.15);
+        color: white !important;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(.4,2,.4,1);
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        font-size: 1rem;
+        letter-spacing: 0.03em;
+    }
+    .nav-btn:hover, .nav-btn:focus {
+        background: rgba(255,255,255,0.25);
+        color: #186fe0 !important;
+        transform: translateY(-2px) scale(1.04);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+        outline: none;
+        text-decoration: none;
+    }
+    .nav-btn:active {
+        transform: translateY(0) scale(0.98);
+    }
+    .nav-btn::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 5px;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.5);
+        opacity: 0;
+        border-radius: 100%;
+        transform: scale(1, 1) translate(-50%);
+        transform-origin: 50% 50%;
+    }
+    .nav-btn:focus:not(:active)::after {
+        animation: ripple 0.6s ease-out;
+    }
+    @keyframes ripple {
+        0% { transform: scale(0, 0); opacity: 0.5; }
+        100% { transform: scale(20, 20); opacity: 0; }
+    }
+    @media (max-width: 768px) {
+        .navbar-brand { margin-right: 0; margin-bottom: 0.5rem; font-size: 1rem; }
+        .nav-btn {
+            display: block;
+            width: 100%;
+            margin: 8px 0;
+            text-align: center;
+        }
+        .navbar .container {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .navbar-collapse {
+            width: 100%;
+        }
+    }
+    .container{
+        padding: 0.5rem;
+    }
+
+    /* Sidebar - Modern Transparent with Divider and Shadow */
+    .sidebar {
+        width: 240px;
+        background: rgb(163, 163, 163); /* semi-transparent */
+        color: rgb(246, 243, 243);
+        
+        position: fixed;
+        top: 64px; /* Below navbar */
+        left: 0;
+        height: calc(100vh - 64px);
+        padding-top: 30px;
+        display: flex;
+        flex-direction: column;
+        z-index: 5;
+        border-top-right-radius: 18px;
+        box-shadow: 0 8px 32px 0 rgba(44,62,80,0.13), 4px 0 24px -4px rgba(24,111,224,0.09);
+        /* Glassmorphism effect */
+        backdrop-filter: blur(11px);
+        -webkit-backdrop-filter: blur(11px);
+        /* Line divider on the right */
+        border-right: 2px solid rgba(24, 111, 224, 0.13);
+        /* Subtle gradient wave overlay */
+        overflow: hidden;
+    }
+    .sidebar::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: -15px;
+        width: 30px;
+        height: 100%;
+        background: linear-gradient(90deg, rgba(24,111,224, 0.09) 0%, rgba(255,255,255,0.01) 100%);
+        z-index: 2;
+        pointer-events: none;
+        opacity: 0.9;
+        filter: blur(1px);
+    }
+
+    .sidebar h2 {
+        text-align: center;
+        font-size: 22px;
+        margin-bottom: 40px;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        letter-spacing: 1px;
+        color: #fff;
+        z-index: 2;
+        position: relative;
+    }
+
+    .sidebar a {
+        display: block;
+        padding: 14px 30px;
+        color: #ecf0f1;
+        text-decoration: none;
+        font-size: 16px;
+        transition: background 0.22s, color 0.22s;
+        border-radius: 6px 18px 18px 6px;
+        margin: 0 10px 7px 7px;
+        font-weight: 500;
+        letter-spacing: 0.03em;
+        z-index: 2;
+        position: relative;
+    }
+
+    .sidebar a:hover {
+        background-color: #34495e;
+        color: var(--secondary-color);
+        text-shadow: 0 2px 8px #4cb55226;
+    }
+
+    /* Main content */
+    .main {
+        margin-left: 240px;
+        padding: 80px 30px 40px 30px;
+        background: #f9f9f9;
+        flex-grow: 1;
+        min-height: 100vh;
+        transition: margin-top 0.22s;
+    }
+
+    h1 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+    }
+
+    .stats-cards {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .card {
+        flex: 1 1 220px;
+        background-color: #3498db;
+        color: white;
+        padding: 22px 24px;
+        border-radius: 14px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.10);
+        min-width: 220px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        transition: box-shadow 0.2s, transform 0.13s;
+    }
+
+    .card.orange { background-color: #e67e22; }
+    .card.green { background-color: #2ecc71; }
+
+    .card h2 {
+        margin: 0;
+        font-size: 40px;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+    }
+
+    .card p {
+        margin: 9px 0 0;
+        font-size: 1.15rem;
+        letter-spacing: 0.02em;
+    }
+
+    .card:hover {
+        box-shadow: 0 6px 22px #186fe020, 0 2.5px 6px #4cb55214;
+        transform: scale(1.03) translateY(-2px);
+    }
+
+    .btn {
+        background-color: #27ae60;
+        color: white;
+        padding: 10px 16px;
+        margin-top: 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 15px;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn:hover {
+        background-color: #1e8449;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 30px;
+    }
+
+    table, th, td {
+        border: 1px solid #ccc;
+    }
+
+    th, td {
+        padding: 10px;
+        text-align: center;
+    }
+
+    th {
+        background-color: #2c3e50;
+        color: white;
+    }
+
+    /* Responsive styles */
+    @media (max-width: 991px) {
+        .main {
+            padding-top: 100px;
+        }
+    }
+    @media (max-width: 767px) {
+        body {
+            flex-direction: column;
+        }
+        .navbar {
+            position: static;
+        }
+        .sidebar {
+            width: 100%;
+            height: auto;
+            position: relative;
+            top: 0;
+            left: 0;
+            padding: 10px 0 0 0;
+            flex-direction: row;
+            overflow-x: auto;
+            border-radius: 0;
+            box-shadow: none;
+            border-right: none;
+            backdrop-filter: blur(7px);
+        }
+        .sidebar::after {
+            display: none;
+        }
+        .sidebar h2 {
+            flex: 1 0 auto;
+            margin: 0 20px 0 15px;
+            font-size: 18px;
+            text-align: left;
+            white-space: nowrap;
+            align-self: center;
+        }
+        .sidebar a {
+            flex: 0 0 auto;
+            padding: 10px 15px;
+            font-size: 14px;
+            white-space: nowrap;
+            border-radius: 7px;
+            margin: 0 5px 7px 0;
+        }
+        .main {
+            margin-left: 0;
+            padding: 20px 8px 28px 8px;
+        }
+        .stats-cards {
+            flex-direction: column;
+        }
+        .card {
+            min-width: auto;
+            width: 100%;
+        }
+    }
+</style>
+</head>
+<body>
+
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+        <a class="navbar-brand align-self-center" href="#">
+            <i class="fas fa-broom me-2"></i>Web Application Portal For Assistance Of Swachh Bharat Abhiyan
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navAdminDash">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navAdminDash">
+            <div class="d-flex flex-column flex-lg-row align-items-lg-center ms-lg-4 mt-2 mt-lg-0">
+                <a href="{{ url_for('staff_routes.admin_logout') }}">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <h2>Admin Panel</h2>
+    <a href="{{ url_for('staff_routes.admin_dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a>
+    <a href="{{ url_for('staff_routes.worker_details') }}"><i class="fas fa-map-marker-alt me-2"></i>Reached Locations</a>
+    <a href="{{ url_for('staff_routes.add_new_staff') }}"><i class="fas fa-user-plus me-2"></i>Add new worker</a>
+    <a href="{{ url_for('staff_routes.view_user_data') }}"><i class="fas fa-users me-2"></i>Registered Locations</a>
+    <a href="{{ url_for('staff_routes.staff_table') }}"><i class="fas fa-users-cog me-2"></i>Working Staff</a>
+    
+</div>
+
+<!-- Main Content -->
+<div class="main">
+    <h1>Welcome, Admin</h1>
+
+    <div class="stats-cards">
+        <div class="card">
+            <h2>{{ staff_count }}</h2>
+            <p>Total Staff</p>
+        </div>
+        <div class="card orange">
+            <h2>{{ worker_details_count }}</h2>
+            <p>Solved Complaints</p>
+        </div>
+        <div class="card green">
+            <h2>{{ user_data_count }}</h2>
+            <p>New Registered Complaints</p>
+        </div>
+    </div>
+
+    <!-- You can add your table or other content here -->
+
+</div>
+
+<!-- Bootstrap JS for navbar collapse functionality -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

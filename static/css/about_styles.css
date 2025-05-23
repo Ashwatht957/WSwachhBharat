@@ -1,0 +1,35 @@
+/* about_styles.css */
+
+/* Apply general font to the whole page */
+body {
+    font-family: 'Roboto', sans-serif;
+}
+
+/* Heading styles */
+h1, h2, h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+}
+
+/* Customize list style */
+.custom-list {
+    list-style-type: disc;
+    padding-left: 20px;
+    margin-top: 20px;
+}
+
+/* Navbar spacing fix */
+.navbar-nav .nav-item {
+    margin-left: 20px;
+}
+
+/* Button customization */
+.btn-danger {
+    font-weight: 500;
+}
+
+/* Footer style */
+footer p {
+    margin: 0;
+    font-size: 14px;
+}
