@@ -1,3 +1,8 @@
+
+Pratham Koparde
+2:51 PM (0 minutes ago)
+to me
+
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from flask import Blueprint, render_template, request, jsonify, g
@@ -9,20 +14,24 @@ from mail_setup import mail
 
 user_routes = Blueprint('user_routes', __name__, template_folder='../templates/user')
 
-# Load ward boundaries from GeoJSON
+# Load ward boundaries from GeoJSON once at module load
 GEOJSON_FILE = "geojson/RB.geojson"
-wards_gdf = gpd.read_file(GEOJSON_FILE)
+try:
+    wards_gdf = gpd.read_file(GEOJSON_FILE)
+except Exception as e:
+    print(f"[ERROR] Failed to load GeoJSON file '{GEOJSON_FILE}': {e}")
+    wards_gdf = None  # Mark as None so we can handle it later
 
-# OpenCage API key
+# OpenCage API key for reverse geocoding
 OPENCAGE_API_KEY = 'd0dd67bb35e54bc4ba67c965e7b37a45'
 
-# === Utility Functions ===
+# === Utility functions ===
 
 def validate_coordinates(lat, lon):
     try:
         lat, lon = float(lat), float(lon)
         return -90 <= lat <= 90 and -180 <= lon <= 180
-    except:
+    except Exception:
         return False
 
 def reverse_geocode(lat, lon):
@@ -34,9 +43,12 @@ def reverse_geocode(lat, lon):
         )
         response.raise_for_status()
         data = response.json()
-        return data['results'][0].get('formatted', 'Unknown location') if data.get('results') else "Unknown location"
+        if data.get('results'):
+            return data['results'][0].get('formatted', 'Unknown location')
+        else:
+            return "Unknown location"
     except Exception as e:
-        print(f"Reverse geocoding error: {e}")
+        print(f"[ERROR] Reverse geocoding failed: {e}")
         return "Unknown location"
 
 def is_in_rabakavi_banahatti(lat, lon):
@@ -60,7 +72,7 @@ def is_in_rabakavi_banahatti(lat, lon):
             components.get('country', '').lower() == 'india'
         )
     except Exception as e:
-        print(f"Location validation error: {e}")
+        print(f"[ERROR] Location validation error: {e}")
         return False
 
 # === Routes ===
@@ -71,6 +83,9 @@ def home():
 
 @user_routes.route('/get_ward')
 def get_ward():
+    if wards_gdf is None:
+        return jsonify({"error": "Ward boundaries data not loaded"}), 500
+
     lat = request.args.get('lat', type=float)
     lon = request.args.get('lon', type=float)
 
@@ -106,6 +121,11 @@ def get_ward():
 @user_routes.route('/submit_user', methods=['POST'])
 def submit_user():
     try:
+        # Check wards_gdf loaded
+        if wards_gdf is None:
+            return jsonify({"success": False, "error": "Ward boundaries data not loaded"}), 500
+
+        # Extract form data
         name = request.form.get('name')
         email = request.form.get('email')
         latitude = request.form.get('latitude', type=float)
@@ -113,23 +133,49 @@ def submit_user():
         ward_name = request.form.get('ward')
         image = request.files.get('image')
 
+        print(f"[DEBUG] Submission received: name={name}, email={email}, lat={latitude}, lon={longitude}, ward={ward_name}")
+
+        # Validate DB connections from Flask global g
+        if not hasattr(g, 'location_db') or not hasattr(g, 'staff_db'):
+            print("[ERROR] Database connection(s) not found in Flask g")
+            return jsonify({"success": False, "error": "Database connection error"}), 500
+
+        if g.location_db is None or g.staff_db is None:
+            print("[ERROR] One or both database connections are None")
+            return jsonify({"success": False, "error": "Database connection error"}), 500
+
+        # Validate required fields
         if not all([name, email, latitude, longitude, ward_name]):
             return jsonify({"success": False, "error": "Missing required fields"}), 400
 
+        # Validate coordinates
         if not validate_coordinates(latitude, longitude):
             return jsonify({"success": False, "error": "Invalid coordinates"}), 400
 
+        # Validate location inside service area
         if not is_in_rabakavi_banahatti(latitude, longitude):
             return jsonify({"success": False, "error": "Outside service area"}), 400
 
+        # Validate ward name exists in GeoJSON
         matched_ward = wards_gdf[wards_gdf['NAME'] == ward_name]
         if matched_ward.empty:
             return jsonify({"success": False, "error": f"Ward '{ward_name}' not found"}), 400
 
         ward_id = int(matched_ward.iloc[0]['WARD_ID'])
-        image_data = image.read() if image else None
 
-        # Insert into user_data
+        # Read image binary data safely
+        image_data = None
+        if image:
+            try:
+                image_data = image.read()
+                if not image_data:
+                    print("[WARN] Uploaded image file is empty")
+                    image_data = None
+            except Exception as e:
+                print(f"[ERROR] Reading image file failed: {e}")
+                return jsonify({"success": False, "error": "Invalid image file"}), 400
+
+        # Insert user data into location_db
         location_db = g.location_db
         cursor = location_db.cursor()
         cursor.execute("""
@@ -140,16 +186,19 @@ def submit_user():
         location_db.commit()
         cursor.close()
 
-        # Fetch worker email
+        print("[DEBUG] User data inserted into DB")
+
+        # Query staff email for that ward
         staff_cursor = g.staff_db.cursor(cursor_factory=RealDictCursor)
         staff_cursor.execute("SELECT email FROM staff WHERE ward_id = %s LIMIT 1", (ward_id,))
         worker = staff_cursor.fetchone()
         staff_cursor.close()
 
         if not worker:
+            print(f"[ERROR] No worker assigned to ward_id {ward_id}")
             return jsonify({"success": False, "error": "No worker assigned to this ward"}), 400
 
-        # Send email
+        # Compose and send email notification
         msg = Message(
             subject="New Location Submitted",
             sender="swachhindiamission@gmail.com",
@@ -164,14 +213,20 @@ def submit_user():
                 "Please visit the location and complete the task."
             )
         )
-        mail.send(msg)
+        try:
+            mail.send(msg)
+            print(f"[DEBUG] Email sent to worker: {worker['email']}")
+        except Exception as e:
+            print(f"[ERROR] Failed to send email: {e}")
+            # Still return success but notify about email failure
+            return jsonify({"success": True, "message": "Submission successful but failed to send email."})
 
         return jsonify({"success": True, "message": "Submission successful and email sent."})
 
     except psycopg2.Error as db_err:
-        print(f"[DB Error] {db_err}")
+        print(f"[DB ERROR] Code: {db_err.pgcode}, Message: {db_err.pgerror}")
         return jsonify({"success": False, "error": "Database error"}), 500
 
     except Exception as e:
-        print(f"[Unhandled Error] {e}")
+        print(f"[UNHANDLED ERROR] {e}")
         return jsonify({"success": False, "error": "Internal server error"}), 500
