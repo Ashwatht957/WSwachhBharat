@@ -23,7 +23,7 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'swachhindiamission@gmail.com')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'eieu rwiw hgph dgnqcd')  # Use env vars in production!
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'wucy ksgf lwuq zjeb')  # Use env vars in production!
 
 mail.init_app(app)
 
