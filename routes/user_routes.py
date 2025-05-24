@@ -6,22 +6,23 @@ import geopandas as gpd
 import requests
 from flask_mail import Message
 from mail_setup import mail
-from db import get_staff_db, get_location_db  # Import from the new db.py
 
 user_routes = Blueprint('user_routes', __name__, template_folder='../templates/user')
 
-# Load wards GeoJSON once
+# Load ward boundaries from GeoJSON
 GEOJSON_FILE = "geojson/RB.geojson"
 wards_gdf = gpd.read_file(GEOJSON_FILE)
 
+# OpenCage API key
 OPENCAGE_API_KEY = 'd0dd67bb35e54bc4ba67c965e7b37a45'
+
+# === Utility Functions ===
 
 def validate_coordinates(lat, lon):
     try:
-        lat = float(lat)
-        lon = float(lon)
+        lat, lon = float(lat), float(lon)
         return -90 <= lat <= 90 and -180 <= lon <= 180
-    except (TypeError, ValueError):
+    except:
         return False
 
 def reverse_geocode(lat, lon):
@@ -33,11 +34,10 @@ def reverse_geocode(lat, lon):
         )
         response.raise_for_status()
         data = response.json()
-        if data.get('results'):
-            return data['results'][0].get('formatted', 'Unknown location')
+        return data['results'][0].get('formatted', 'Unknown location') if data.get('results') else "Unknown location"
     except Exception as e:
-        print(f"Reverse geocode error: {e}")
-    return "Unknown location"
+        print(f"Reverse geocoding error: {e}")
+        return "Unknown location"
 
 def is_in_rabakavi_banahatti(lat, lon):
     try:
@@ -48,20 +48,22 @@ def is_in_rabakavi_banahatti(lat, lon):
         )
         response.raise_for_status()
         components = response.json()['results'][0]['components']
+        location_parts = " ".join([
+            components.get('village', ''),
+            components.get('town', ''),
+            components.get('city', '')
+        ]).lower()
 
-        village = components.get('village', '').lower().strip()
-        town = components.get('town', '').lower().strip()
-        city = components.get('city', '').lower().strip()
-        state = components.get('state', '').lower().strip()
-        country = components.get('country', '').lower().strip()
-
-        location_text = " ".join([village, town, city])
-        allowed_locations = ["rabakavi", "banahatti", "rampur", "hosur"]
-
-        return any(loc in location_text for loc in allowed_locations) and state == "karnataka" and country == "india"
+        return (
+            any(loc in location_parts for loc in ["rabakavi", "banahatti", "rampur", "hosur"]) and
+            components.get('state', '').lower() == 'karnataka' and
+            components.get('country', '').lower() == 'india'
+        )
     except Exception as e:
-        print(f"Location check error: {e}")
+        print(f"Location validation error: {e}")
         return False
+
+# === Routes ===
 
 @user_routes.route('/')
 def home():
@@ -76,7 +78,7 @@ def get_ward():
         return jsonify({"error": "Invalid latitude or longitude"}), 400
 
     point = Point(lon, lat)
-    wards_gdf['geometry'] = wards_gdf['geometry'].buffer(0)
+    wards_gdf['geometry'] = wards_gdf['geometry'].buffer(0)  # Clean geometries
 
     for _, row in wards_gdf.iterrows():
         if row['geometry'].contains(point):
@@ -86,9 +88,9 @@ def get_ward():
                 "in_bounds": True
             })
 
-    buffer_dist = 0.0005
+    # Try buffered detection
     for _, row in wards_gdf.iterrows():
-        if row['geometry'].buffer(buffer_dist).contains(point):
+        if row['geometry'].buffer(0.0005).contains(point):
             return jsonify({
                 "ward_id": row['WARD_ID'],
                 "ward_name": row['NAME'],
@@ -108,8 +110,8 @@ def submit_user():
         email = request.form.get('email')
         latitude = request.form.get('latitude', type=float)
         longitude = request.form.get('longitude', type=float)
-        image = request.files.get('image')
         ward_name = request.form.get('ward')
+        image = request.files.get('image')
 
         if not all([name, email, latitude, longitude, ward_name]):
             return jsonify({"success": False, "error": "Missing required fields"}), 400
@@ -125,12 +127,11 @@ def submit_user():
             return jsonify({"success": False, "error": f"Ward '{ward_name}' not found"}), 400
 
         ward_id = int(matched_ward.iloc[0]['WARD_ID'])
-
-        # Insert user data
-        location_db = g.location_db
-        cursor = location_db.cursor()
         image_data = image.read() if image else None
 
+        # Insert into user_data
+        location_db = g.location_db
+        cursor = location_db.cursor()
         cursor.execute("""
             INSERT INTO user_data (name, email, latitude, longitude, ward_id, image, ward_name)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
@@ -139,7 +140,7 @@ def submit_user():
         location_db.commit()
         cursor.close()
 
-        # Fetch worker email with RealDictCursor for dict-like access
+        # Fetch worker email
         staff_cursor = g.staff_db.cursor(cursor_factory=RealDictCursor)
         staff_cursor.execute("SELECT email FROM staff WHERE ward_id = %s LIMIT 1", (ward_id,))
         worker = staff_cursor.fetchone()
@@ -148,6 +149,7 @@ def submit_user():
         if not worker:
             return jsonify({"success": False, "error": "No worker assigned to this ward"}), 400
 
+        # Send email
         msg = Message(
             subject="New Location Submitted",
             sender="swachhindiamission@gmail.com",
@@ -164,12 +166,12 @@ def submit_user():
         )
         mail.send(msg)
 
-        return jsonify({"success": True, "message": "Submitted and email sent."})
+        return jsonify({"success": True, "message": "Submission successful and email sent."})
 
     except psycopg2.Error as db_err:
-        print("Database error:", db_err)
-        return jsonify({"success": False, "error": "Database error occurred."}), 500
+        print(f"[DB Error] {db_err}")
+        return jsonify({"success": False, "error": "Database error"}), 500
 
     except Exception as e:
-        print("submit_user error:", e)
+        print(f"[Unhandled Error] {e}")
         return jsonify({"success": False, "error": "Internal server error"}), 500
