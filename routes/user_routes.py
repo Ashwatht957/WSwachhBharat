@@ -15,12 +15,9 @@ try:
     wards_gdf = gpd.read_file(GEOJSON_FILE)
 except Exception as e:
     print(f"[ERROR] Failed to load GeoJSON file '{GEOJSON_FILE}': {e}")
-    wards_gdf = None  # Mark as None so we can handle it later
+    wards_gdf = None
 
-# OpenCage API key for reverse geocoding
 OPENCAGE_API_KEY = 'd0dd67bb35e54bc4ba67c965e7b37a45'
-
-# === Utility functions ===
 
 def validate_coordinates(lat, lon):
     try:
@@ -60,7 +57,6 @@ def is_in_rabakavi_banahatti(lat, lon):
             components.get('town', ''),
             components.get('city', '')
         ]).lower()
-
         return (
             any(loc in location_parts for loc in ["rabakavi", "banahatti", "rampur", "hosur"]) and
             components.get('state', '').lower() == 'karnataka' and
@@ -69,8 +65,6 @@ def is_in_rabakavi_banahatti(lat, lon):
     except Exception as e:
         print(f"[ERROR] Location validation error: {e}")
         return False
-
-# === Routes ===
 
 @user_routes.route('/')
 def home():
@@ -116,21 +110,19 @@ def get_ward():
 @user_routes.route('/submit_user', methods=['POST'])
 def submit_user():
     try:
-        # Check wards_gdf loaded
         if wards_gdf is None:
             return jsonify({"success": False, "error": "Ward boundaries data not loaded"}), 500
 
-        # Extract form data
         name = request.form.get('name')
         email = request.form.get('email')
-        latitude = request.form.get('latitude', type=float)
-        longitude = request.form.get('longitude', type=float)
+        latitude = request.form.get('latitude')
+        longitude = request.form.get('longitude')
         ward_name = request.form.get('ward')
         image = request.files.get('image')
 
         print(f"[DEBUG] Submission received: name={name}, email={email}, lat={latitude}, lon={longitude}, ward={ward_name}")
 
-        # Validate DB connections from Flask global g
+        # Validate DB connections
         if not hasattr(g, 'location_db') or not hasattr(g, 'staff_db'):
             print("[ERROR] Database connection(s) not found in Flask g")
             return jsonify({"success": False, "error": "Database connection error"}), 500
@@ -141,19 +133,26 @@ def submit_user():
 
         # Validate required fields
         if not all([name, email, latitude, longitude, ward_name]):
+            print("[ERROR] Missing required fields")
             return jsonify({"success": False, "error": "Missing required fields"}), 400
 
         # Validate coordinates
         if not validate_coordinates(latitude, longitude):
+            print("[ERROR] Invalid coordinates")
             return jsonify({"success": False, "error": "Invalid coordinates"}), 400
+
+        latitude = float(latitude)
+        longitude = float(longitude)
 
         # Validate location inside service area
         if not is_in_rabakavi_banahatti(latitude, longitude):
+            print("[ERROR] Outside service area")
             return jsonify({"success": False, "error": "Outside service area"}), 400
 
         # Validate ward name exists in GeoJSON
         matched_ward = wards_gdf[wards_gdf['NAME'] == ward_name]
         if matched_ward.empty:
+            print(f"[ERROR] Ward '{ward_name}' not found in GeoJSON")
             return jsonify({"success": False, "error": f"Ward '{ward_name}' not found"}), 400
 
         ward_id = int(matched_ward.iloc[0]['WARD_ID'])
@@ -171,17 +170,20 @@ def submit_user():
                 return jsonify({"success": False, "error": "Invalid image file"}), 400
 
         # Insert user data into location_db
-        location_db = g.location_db
-        cursor = location_db.cursor()
-        cursor.execute("""
-            INSERT INTO user_data (name, email, latitude, longitude, ward_id, image, ward_name)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (name, email, latitude, longitude, ward_id,
-              psycopg2.Binary(image_data) if image_data else None, ward_name))
-        location_db.commit()
-        cursor.close()
-
-        print("[DEBUG] User data inserted into DB")
+        try:
+            location_db = g.location_db
+            cursor = location_db.cursor()
+            cursor.execute("""
+                INSERT INTO user_data (name, email, latitude, longitude, ward_id, image, ward_name)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (name, email, latitude, longitude, ward_id,
+                  psycopg2.Binary(image_data) if image_data else None, ward_name))
+            location_db.commit()
+            cursor.close()
+            print("[DEBUG] User data inserted into DB")
+        except psycopg2.Error as db_err:
+            print(f"[DB ERROR] Code: {db_err.pgcode}, Message: {db_err.pgerror}")
+            return jsonify({"success": False, "error": "Database error"}), 500
 
         # Query staff email for that ward
         staff_cursor = g.staff_db.cursor(cursor_factory=RealDictCursor)
@@ -213,14 +215,9 @@ def submit_user():
             print(f"[DEBUG] Email sent to worker: {worker['email']}")
         except Exception as e:
             print(f"[ERROR] Failed to send email: {e}")
-            # Still return success but notify about email failure
             return jsonify({"success": True, "message": "Submission successful but failed to send email."})
 
         return jsonify({"success": True, "message": "Submission successful and email sent."})
-
-    except psycopg2.Error as db_err:
-        print(f"[DB ERROR] Code: {db_err.pgcode}, Message: {db_err.pgerror}")
-        return jsonify({"success": False, "error": "Database error"}), 500
 
     except Exception as e:
         print(f"[UNHANDLED ERROR] {e}")
