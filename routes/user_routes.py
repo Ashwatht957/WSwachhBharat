@@ -1,8 +1,4 @@
 
-Pratham Koparde
-2:51 PM (0 minutes ago)
-to me
-
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from flask import Blueprint, render_template, request, jsonify, g
