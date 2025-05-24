@@ -106,12 +106,18 @@ def get_ward():
         "error": "Point not in any ward",
         "location": reverse_geocode(lat, lon)
     }), 404
+import sys
+# ...existing imports...
 
 @user_routes.route('/submit_user', methods=['POST'])
 def submit_user():
     try:
         if wards_gdf is None:
             return jsonify({"success": False, "error": "Ward boundaries data not loaded"}), 500
+
+        # Debug: Print form and file data to server logs
+        print("Form Data:", request.form, file=sys.stderr)
+        print("File Data:", request.files, file=sys.stderr)
 
         name = request.form.get('name')
         email = request.form.get('email')
