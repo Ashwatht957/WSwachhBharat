@@ -1,19 +1,13 @@
-import base64
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, g
 from flask_mail import Message
 from datetime import datetime
-import mysql.connector
+import base64
 
 worker_routes = Blueprint('worker_routes', __name__, template_folder='../templates/worker')
 
-def get_staff_db():
-    return mysql.connector.connect(host='localhost', user='root', password='', database='staff')
-
-def get_location_db():
-    return mysql.connector.connect(host='localhost', user='root', password='', database='location')
-
 @worker_routes.route('/worker/dashboard', methods=['GET', 'POST'])
 def worker_dashboard():
+    # Ensure only logged-in workers can access
     if 'user_id' not in session or session.get('role') != 'worker':
         flash("Please log in first.", "warning")
         return redirect(url_for('central_routes.central_login'))
@@ -24,13 +18,12 @@ def worker_dashboard():
         visited_ids = request.form.getlist('visited_ids')
         if visited_ids:
             try:
-                loc_conn = get_location_db()
-                staff_conn = get_staff_db()
-                loc_cursor = loc_conn.cursor(dictionary=True)
-                staff_cursor = staff_conn.cursor()
+                loc_cursor = g.location_db.cursor()
+                staff_cursor = g.staff_db.cursor()
                 mail = current_app.extensions['mail']
 
                 for link_id in visited_ids:
+                    # Fetch record from user_data
                     loc_cursor.execute("""
                         SELECT name, email, latitude, longitude, ward_id, ward_name, image
                         FROM user_data WHERE id = %s
@@ -38,74 +31,102 @@ def worker_dashboard():
                     row = loc_cursor.fetchone()
 
                     if row:
-                        # Insert into visited_links
+                        name, email, lat, lon, ward_id, ward_name, image = row
+
+                        # Get worker uploaded image file for this user
+                        worker_file = request.files.get(f'new_image_{link_id}')
+                        worker_image_data = None
+                        if worker_file and worker_file.filename != '':
+                            worker_image_data = worker_file.read()
+
+                        # Insert into visited_links including worker_image if available
                         staff_cursor.execute("""
-                            INSERT INTO visited_links (name, latitude, longitude, ward_id, visited_at, image)
-                            VALUES (%s, %s, %s, %s, %s, %s)
-                        """, (row['name'], row['latitude'], row['longitude'], row['ward_id'], datetime.now(), row['image']))
+                            INSERT INTO visited_links (name, latitude, longitude, ward_id, visited_at, email, image, worker_image)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                        """, (
+                            name,
+                            lat,
+                            lon,
+                            ward_id,
+                            datetime.now(),
+                            email,
+                            image,
+                            worker_image_data
+                        ))
 
-                        # Delete from user_data
+                        # Delete the visited user from original table
                         loc_cursor.execute("DELETE FROM user_data WHERE id = %s", (link_id,))
-                        loc_conn.commit()
-                        staff_conn.commit()
 
-                        # Send email
+                        # Send notification email with worker image attached if exists
                         msg = Message(
                             subject="Your location has been visited!",
                             sender='swachhindiamission@gmail.com',
-                            recipients=[row['email']],
+                            recipients=[email],
                             body=(
-                                f"Dear {row['name']},\n\n"
-                                f"A worker has visited your submitted location in the area: {row['ward_name']}.\n"
+                                f"Dear {name},\n\n"
+                                f"A worker has visited your submitted location in the area: {ward_name}.\n"
                                 f"Visited At: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
                                 "Thank you for supporting the Swachh Bharat Mission. Keep encouraging others to participate!"
                             )
                         )
+                        if worker_image_data:
+                            msg.attach("worker_image.jpg", "image/jpeg", worker_image_data)
+
                         mail.send(msg)
 
-                flash("Visited links processed and emails sent.", "success")
+                g.location_db.commit()
+                g.staff_db.commit()
+                flash("Selected locations marked as visited and emails sent.", "success")
 
-            except mysql.connector.Error as err:
-                flash(f"Database error: {err}", "danger")
+            except Exception as e:
+                g.location_db.rollback()
+                g.staff_db.rollback()
+                flash(f"Error processing visited entries: {e}", "danger")
 
             finally:
                 loc_cursor.close()
                 staff_cursor.close()
-                loc_conn.close()
-                staff_conn.close()
 
-        return redirect(url_for('worker_routes.worker_dashboard'))
+            return redirect(url_for('worker_routes.worker_dashboard'))
 
-    # GET method - load user data for this ward
+    # GET method – show user data
     try:
-        conn = get_location_db()
-        cursor = conn.cursor(dictionary=True)
+        cursor = g.location_db.cursor()
         cursor.execute("""
             SELECT id, name, longitude, latitude, ward_id, image, ward_name
             FROM user_data WHERE ward_id = %s
         """, (ward_id,))
-        worker_data_raw = cursor.fetchall()
+        rows = cursor.fetchall()
 
         worker_data = []
-        for row in worker_data_raw:
-            row['image'] = base64.b64encode(row['image']).decode('utf-8') if row['image'] else ''
-            worker_data.append(row)
+        for row in rows:
+            image_encoded = base64.b64encode(row[5]).decode('utf-8') if row[5] else ''
+            worker_data.append({
+                'id': row[0],
+                'name': row[1],
+                'longitude': row[2],
+                'latitude': row[3],
+                'ward_id': row[4],
+                'image': image_encoded,
+                'ward_name': row[6]
+            })
 
-    except mysql.connector.Error as err:
-        flash(f"Error loading data: {err}", "danger")
+    except Exception as e:
+        flash(f"Error loading user data: {e}", "danger")
         worker_data = []
 
     finally:
         cursor.close()
-        conn.close()
 
     if not worker_data:
-        flash("No user data found for your ward.", "info")
+        flash("No user submissions available for your ward.", "info")
 
     return render_template('worker/worker_dashboard.html', worker_data=worker_data)
+
 
 @worker_routes.route('/worker/logout')
 def worker_logout():
     session.clear()
     flash("Logged out successfully.", "info")
     return redirect(url_for('central_routes.central_login'))
+

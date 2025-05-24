@@ -1,52 +1,27 @@
-import mysql.connector
-from flask import Blueprint, render_template, request, jsonify
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from flask import Blueprint, render_template, request, jsonify, g
 from shapely.geometry import Point
 import geopandas as gpd
 import requests
 from flask_mail import Message
-from mail_setup import mail  # Your configured Flask-Mail instance
+from mail_setup import mail
+from db import get_staff_db, get_location_db  # Import from the new db.py
 
-# Blueprint setup
 user_routes = Blueprint('user_routes', __name__, template_folder='../templates/user')
 
-# Database configs
-USER_DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '',
-    'database': 'location'
-}
-
-STAFF_DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '',
-    'database': 'staff'
-}
-
-# Load wards GeoJSON once at startup
+# Load wards GeoJSON once
 GEOJSON_FILE = "geojson/RB.geojson"
 wards_gdf = gpd.read_file(GEOJSON_FILE)
 
-# OpenCage API key
 OPENCAGE_API_KEY = 'd0dd67bb35e54bc4ba67c965e7b37a45'
-
-
-def get_user_db_connection():
-    return mysql.connector.connect(**USER_DB_CONFIG)
-
-def get_staff_db_connection():
-    return mysql.connector.connect(**STAFF_DB_CONFIG)
 
 def validate_coordinates(lat, lon):
     try:
         lat = float(lat)
         lon = float(lon)
-        valid = -90 <= lat <= 90 and -180 <= lon <= 180
-        print(f"Validating coords: lat={lat}, lon={lon} => {valid}")
-        return valid
+        return -90 <= lat <= 90 and -180 <= lon <= 180
     except (TypeError, ValueError):
-        print(f"Invalid coords: lat={lat}, lon={lon}")
         return False
 
 def reverse_geocode(lat, lon):
@@ -59,11 +34,9 @@ def reverse_geocode(lat, lon):
         response.raise_for_status()
         data = response.json()
         if data.get('results'):
-            location = data['results'][0].get('formatted', 'Unknown location')
-            print(f"Reverse geocode result: {location}")
-            return location
+            return data['results'][0].get('formatted', 'Unknown location')
     except Exception as e:
-        print(f"OpenCage error: {e}")
+        print(f"Reverse geocode error: {e}")
     return "Unknown location"
 
 def is_in_rabakavi_banahatti(lat, lon):
@@ -85,14 +58,10 @@ def is_in_rabakavi_banahatti(lat, lon):
         location_text = " ".join([village, town, city])
         allowed_locations = ["rabakavi", "banahatti", "rampur", "hosur"]
 
-        is_valid = any(loc in location_text for loc in allowed_locations) and state == "karnataka" and country == "india"
-        print(f"Location check: {location_text}, state={state}, country={country} => {is_valid}")
-        return is_valid
+        return any(loc in location_text for loc in allowed_locations) and state == "karnataka" and country == "india"
     except Exception as e:
-        print(f"OpenCage location check error: {e}")
+        print(f"Location check error: {e}")
         return False
-
-# Routes
 
 @user_routes.route('/')
 def home():
@@ -107,27 +76,19 @@ def get_ward():
         return jsonify({"error": "Invalid latitude or longitude"}), 400
 
     point = Point(lon, lat)
-    print(f"Checking point: ({lat}, {lon})")
-
-    # Ensure all geometries are valid
     wards_gdf['geometry'] = wards_gdf['geometry'].buffer(0)
 
-    # Try exact match first
     for _, row in wards_gdf.iterrows():
         if row['geometry'].contains(point):
-            print(f"Exact match found: {row['NAME']} (WARD_ID: {row['WARD_ID']})")
             return jsonify({
                 "ward_id": row['WARD_ID'],
                 "ward_name": row['NAME'],
                 "in_bounds": True
             })
 
-    # Try buffered match (fallback)
-    buffer_dist = 0.0005  # ~50m
+    buffer_dist = 0.0005
     for _, row in wards_gdf.iterrows():
-        buffered = row['geometry'].buffer(buffer_dist)
-        if buffered.contains(point):
-            print(f"Buffered match found: {row['NAME']} (WARD_ID: {row['WARD_ID']})")
+        if row['geometry'].buffer(buffer_dist).contains(point):
             return jsonify({
                 "ward_id": row['WARD_ID'],
                 "ward_name": row['NAME'],
@@ -135,16 +96,10 @@ def get_ward():
                 "note": "Buffered match"
             })
 
-    # No match — reverse geocode for info
-    location_name = reverse_geocode(lat, lon)
-    print("No match found. Location:", location_name)
-
     return jsonify({
         "error": "Point not in any ward",
-        "location": location_name
+        "location": reverse_geocode(lat, lon)
     }), 404
-
-
 
 @user_routes.route('/submit_user', methods=['POST'])
 def submit_user():
@@ -156,76 +111,65 @@ def submit_user():
         image = request.files.get('image')
         ward_name = request.form.get('ward')
 
-        print(f"Received submission: name={name}, email={email}, lat={latitude}, lon={longitude}, ward={ward_name}")
-
-        # Basic validation
         if not all([name, email, latitude, longitude, ward_name]):
             return jsonify({"success": False, "error": "Missing required fields"}), 400
 
         if not validate_coordinates(latitude, longitude):
-            return jsonify({"success": False, "error": "Invalid latitude or longitude"}), 400
+            return jsonify({"success": False, "error": "Invalid coordinates"}), 400
 
         if not is_in_rabakavi_banahatti(latitude, longitude):
-            return jsonify({"success": False, "error": "Coordinates not in Rabakavi-Banahatti area"}), 400
+            return jsonify({"success": False, "error": "Outside service area"}), 400
 
         matched_ward = wards_gdf[wards_gdf['NAME'] == ward_name]
         if matched_ward.empty:
-            return jsonify({"success": False, "error": f"Ward '{ward_name}' not found in GeoJSON"}), 400
+            return jsonify({"success": False, "error": f"Ward '{ward_name}' not found"}), 400
 
         ward_id = int(matched_ward.iloc[0]['WARD_ID'])
-        print(f"Ward matched: {ward_name} (WARD_ID: {ward_id})")
 
-        # Insert data into location DB
-        conn = get_user_db_connection()
-        cursor = conn.cursor()
+        # Insert user data
+        location_db = g.location_db
+        cursor = location_db.cursor()
         image_data = image.read() if image else None
 
-        insert_query = """
+        cursor.execute("""
             INSERT INTO user_data (name, email, latitude, longitude, ward_id, image, ward_name)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """
-        cursor.execute(insert_query, (name, email, latitude, longitude, ward_id, image_data, ward_name))
-        conn.commit()
+        """, (name, email, latitude, longitude, ward_id,
+              psycopg2.Binary(image_data) if image_data else None, ward_name))
+        location_db.commit()
         cursor.close()
-        conn.close()
 
-        # Fetch worker email from staff DB
-        staff_conn = get_staff_db_connection()
-        staff_cursor = staff_conn.cursor(dictionary=True)
-        staff_cursor.execute('SELECT email FROM staff WHERE ward_id = %s LIMIT 1', (ward_id,))
+        # Fetch worker email with RealDictCursor for dict-like access
+        staff_cursor = g.staff_db.cursor(cursor_factory=RealDictCursor)
+        staff_cursor.execute("SELECT email FROM staff WHERE ward_id = %s LIMIT 1", (ward_id,))
         worker = staff_cursor.fetchone()
         staff_cursor.close()
-        staff_conn.close()
 
-        if not worker or not worker.get('email'):
-            return jsonify({"success": False, "error": "No worker found for this ward."}), 400
+        if not worker:
+            return jsonify({"success": False, "error": "No worker assigned to this ward"}), 400
 
-        worker_email = worker['email']
-
-        # Send notification email
         msg = Message(
-            subject='New Location Submitted',
-            sender='swachhindiamission@gmail.com',
-            recipients=[worker_email],
+            subject="New Location Submitted",
+            sender="swachhindiamission@gmail.com",
+            recipients=[worker['email']],
             body=(
-                f"A new location has been submitted:\n\n"
+                f"New location submitted:\n\n"
                 f"Name: {name}\n"
                 f"Email: {email}\n"
                 f"Latitude: {latitude}\n"
                 f"Longitude: {longitude}\n"
-                f"Ward Name: {ward_name}\n"
-                f"Ward ID: {ward_id}\n\n"
-                "Please visit the location and complete the work."
+                f"Ward: {ward_name} (ID: {ward_id})\n\n"
+                "Please visit the location and complete the task."
             )
         )
         mail.send(msg)
 
-        return jsonify({"success": True, "message": "Data inserted and email sent successfully!"})
+        return jsonify({"success": True, "message": "Submitted and email sent."})
 
-    except mysql.connector.Error as db_err:
-        print(f"Database error: {db_err}")
+    except psycopg2.Error as db_err:
+        print("Database error:", db_err)
         return jsonify({"success": False, "error": "Database error occurred."}), 500
 
     except Exception as e:
-        print(f"submit_user error: {e}")
-        return jsonify({"success": False, "error": "Internal server error."}), 500
+        print("submit_user error:", e)
+        return jsonify({"success": False, "error": "Internal server error"}), 500

@@ -1,6 +1,8 @@
 import os
-from flask import Flask, render_template, g
-import mysql.connector
+from flask import Flask, g, render_template
+import psycopg2
+from psycopg2 import OperationalError
+from flask_mail import Mail
 from mail_setup import mail
 from routes.user_routes import user_routes
 from routes.staff_routes import staff_routes
@@ -10,39 +12,42 @@ from routes.central_routes import central_routes
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'fallback_secret_key')
 
-# MySQL config from env variables
-app.config['MYSQL_HOST'] = os.environ.get('MYSQL_HOST', '127.0.0.1')
-app.config['MYSQL_PORT'] = int(os.environ.get('MYSQL_PORT', 3306))
-app.config['MYSQL_USER'] = os.environ.get('MYSQL_USER', 'user')
-app.config['MYSQL_PASSWORD'] = os.environ.get('MYSQL_PASSWORD', 'password')
-app.config['MYSQL_DB'] = os.environ.get('MYSQL_DB', 'database')
+# Use your fixed URLs directly here:
+app.config['STAFF_DB_URL'] = 'postgresql://neondb_owner:npg_64pzLnOdiYEm@ep-summer-rice-a11qf6db-pooler.ap-southeast-1.aws.neon.tech/staff?sslmode=require'
+app.config['LOCATION_DB_URL'] = 'postgresql://neondb_owner:npg_64pzLnOdiYEm@ep-summer-rice-a11qf6db-pooler.ap-southeast-1.aws.neon.tech/location?sslmode=require'
 
-# Mail config with hardcoded password
+# Mail config (update username/password or use env vars for production)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'swachhindiamission@gmail.com')  # replace with your email if you want
-app.config['MAIL_PASSWORD'] = 'eieu rwiw hgph dgnq'  # your app password here
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'swachhindiamission@gmail.com')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'eieu rwiw hgph dgnq')
 
-# Initialize mail
 mail.init_app(app)
 
-def get_db():
-    if 'db' not in g:
-        g.db = mysql.connector.connect(
-            host=app.config['MYSQL_HOST'],
-            port=app.config['MYSQL_PORT'],
-            user=app.config['MYSQL_USER'],
-            password=app.config['MYSQL_PASSWORD'],
-            database=app.config['MYSQL_DB']
-        )
-    return g.db
+# Connect to DBs before each request and store in g
+@app.before_request
+def before_request():
+    try:
+        g.staff_db = psycopg2.connect(app.config['STAFF_DB_URL'])
+    except OperationalError as e:
+        print(f"Staff DB connection failed: {e}")
+        g.staff_db = None
+    try:
+        g.location_db = psycopg2.connect(app.config['LOCATION_DB_URL'])
+    except OperationalError as e:
+        print(f"Location DB connection failed: {e}")
+        g.location_db = None
 
+# Close DB connections after each request
 @app.teardown_appcontext
 def close_db(error):
-    db = g.pop('db', None)
-    if db is not None:
-        db.close()
+    staff_db = g.pop('staff_db', None)
+    location_db = g.pop('location_db', None)
+    if staff_db:
+        staff_db.close()
+    if location_db:
+        location_db.close()
 
 # Register blueprints
 app.register_blueprint(user_routes, url_prefix='/user')
