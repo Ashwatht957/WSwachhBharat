@@ -1,3 +1,5 @@
+
+
 import os
 from flask import Flask, g, render_template
 import psycopg2
@@ -16,16 +18,15 @@ app.secret_key = os.environ.get('SECRET_KEY', 'fallback_secret_key')
 app.config['STAFF_DB_URL'] = 'postgresql://neondb_owner:npg_64pzLnOdiYEm@ep-summer-rice-a11qf6db-pooler.ap-southeast-1.aws.neon.tech/staff?sslmode=require'
 app.config['LOCATION_DB_URL'] = 'postgresql://neondb_owner:npg_64pzLnOdiYEm@ep-summer-rice-a11qf6db-pooler.ap-southeast-1.aws.neon.tech/location?sslmode=require'
 
-# Mail config (update username/password or use env vars for production)
+# Mail config
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'swachhindiamission@gmail.com')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'eieu rwiw hgph dgnqcd')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'eieu rwiw hgph dgnqcd')  # Use env vars in production!
 
 mail.init_app(app)
 
-# Connect to DBs before each request and store in g
 @app.before_request
 def before_request():
     try:
@@ -39,7 +40,6 @@ def before_request():
         print(f"Location DB connection failed: {e}")
         g.location_db = None
 
-# Close DB connections after each request
 @app.teardown_appcontext
 def close_db(error):
     staff_db = g.pop('staff_db', None)
@@ -49,7 +49,7 @@ def close_db(error):
     if location_db:
         location_db.close()
 
-# Register blueprints
+# Register routes
 app.register_blueprint(user_routes, url_prefix='/user')
 app.register_blueprint(staff_routes, url_prefix='/staff')
 app.register_blueprint(worker_routes, url_prefix='/worker')
@@ -70,5 +70,7 @@ def prevent_caching(response):
     response.headers['Expires'] = '0'
     return response
 
+# ✅ This is the Render-specific fix
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
