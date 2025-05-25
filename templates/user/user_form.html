@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
     <title>User Information Form</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -23,6 +23,8 @@
             font-family: 'Roboto', 'Poppins', sans-serif;
             color: #333;
             min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         /* Navbar Decoration */
@@ -61,6 +63,7 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             font-size: 1rem;
             letter-spacing: 0.03em;
+            -webkit-tap-highlight-color: transparent;
         }
         .nav-btn:hover, .nav-btn:focus {
             background: rgba(255,255,255,0.25);
@@ -73,37 +76,12 @@
         .nav-btn:active {
             transform: translateY(0) scale(0.98);
         }
-        .nav-btn::after {
-            content: "";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 5px;
-            height: 5px;
-            background: rgba(255, 255, 255, 0.5);
-            opacity: 0;
-            border-radius: 100%;
-            transform: scale(1, 1) translate(-50%);
-            transform-origin: 50% 50%;
-        }
-        .nav-btn:focus:not(:active)::after {
-            animation: ripple 0.6s ease-out;
-        }
-        @keyframes ripple {
-            0% {
-                transform: scale(0, 0);
-                opacity: 0.5;
-            }
-            100% {
-                transform: scale(20, 20);
-                opacity: 0;
-            }
-        }
+
         @media (max-width: 768px) {
             .navbar-brand {
                 margin-right: 0;
                 margin-bottom: 0.5rem;
-                font-size: 1rem;
+                font-size: 0.9rem;
             }
             .nav-btn {
                 display: block;
@@ -131,10 +109,6 @@
             transition: box-shadow 0.3s cubic-bezier(.4,1.4,.4,1), transform 0.18s cubic-bezier(.4,1.4,.4,1);
             position: relative;
         }
-        .form-container:hover {
-            box-shadow: 0 10px 32px rgba(24, 111, 224, 0.17);
-            transform: translateY(-3px) scale(1.012);
-        }
 
         .form-container h2 {
             font-family: 'Montserrat', sans-serif;
@@ -147,22 +121,6 @@
             text-shadow: 0 2px 16px #cfe0fa32;
             position: relative;
         }
-        .form-container h2::after {
-            content: '';
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            bottom: -10px;
-            width: 60px;
-            height: 4px;
-            background: linear-gradient(90deg, #3d7ac6, #4cb552);
-            border-radius: 2px;
-            opacity: 0.5;
-            animation: underlineFade 2s infinite alternate;
-        }
-        @keyframes underlineFade {
-            to { opacity: 1; width: 80px; }
-        }
 
         label.form-label {
             color: var(--primary-color);
@@ -172,10 +130,37 @@
 
         .form-control, .btn, .form-select {
             border-radius: 7px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
         }
+       
+        .form-control {
+            font-size: 16px; /* Prevents zoom on iOS */
+            min-height: 44px; /* Better touch targets */
+        }
+       
         .form-control:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 0.2rem rgba(24, 111, 224, 0.09);
+        }
+
+        /* File input styling for mobile */
+        input[type="file"] {
+            padding: 8px 12px;
+            border: 2px dashed #ddd;
+            background: #f9f9f9;
+        }
+       
+        input[type="file"]:focus {
+            border-color: var(--primary-color);
+            background: #f0f8ff;
+        }
+
+        .btn {
+            min-height: 44px; /* Better touch targets */
+            font-size: 16px;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .btn-outline-primary {
@@ -183,7 +168,7 @@
             color: var(--primary-color) !important;
             font-weight: 500;
             background: transparent;
-            transition: background 0.2s, color 0.2s;
+            transition: all 0.3s ease;
         }
         .btn-outline-primary:hover, .btn-outline-primary:focus {
             background: var(--primary-color) !important;
@@ -196,7 +181,7 @@
             font-weight: 600;
             letter-spacing: 0.04em;
             box-shadow: 0 4px 12px rgba(76,181,82,0.08);
-            transition: background 0.2s, box-shadow 0.2s;
+            transition: all 0.3s ease;
         }
         .btn-primary:hover, .btn-primary:focus {
             background-color: #1358c0 !important;
@@ -204,45 +189,97 @@
             box-shadow: 0 8px 24px rgba(24, 111, 224, 0.12);
         }
 
-        /* Loader */
+        /* Improved loader */
         .loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #3498db;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
             border-radius: 50%;
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             animation: spin 1s linear infinite;
             display: none;
-            margin: 22px auto 0 auto;
+            margin: 20px auto;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
 
-        #successMessage, #errorMessage {
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
             display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
         }
 
-        /* Placeholder style for read-only input */
+        #successMessage, #errorMessage {
+            display: none;
+            margin-top: 1rem;
+        }
+
         #ward[readonly] {
             background-color: #ecf4fc;
             color: #186fe0;
             font-weight: 500;
         }
 
-        /* Responsive for mobile */
+        /* Connection status indicator */
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1000;
+            display: none;
+        }
+        .connection-online {
+            background: #4cb552;
+            color: white;
+        }
+        .connection-offline {
+            background: #dc3545;
+            color: white;
+        }
+
+        /* Mobile-specific improvements */
         @media (max-width: 576px) {
             .form-container {
-                padding: 1.2rem 0.7rem;
+                margin: 20px auto;
+                padding: 1.5rem 1rem;
             }
             .form-container h2 {
-                font-size: 1.2rem;
+                font-size: 1.5rem;
+            }
+            .btn {
+                padding: 12px 20px;
+            }
+        }
+
+        /* iOS specific fixes */
+        @supports (-webkit-touch-callout: none) {
+            .form-control {
+                font-size: 16px !important;
             }
         }
     </style>
 </head>
 <body>
+
+<!-- Connection Status Indicator -->
+<div id="connectionStatus" class="connection-status"></div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loader"></div>
+</div>
 
 <!-- Navigation Bar -->
 <nav class="navbar navbar-expand-lg navbar-dark">
@@ -255,7 +292,7 @@
         </button>
         <div class="collapse navbar-collapse justify-content-end" id="navUserForm">
             <div class="d-flex flex-column flex-lg-row align-items-lg-center ms-lg-4 mt-2 mt-lg-0">
-                <a class="nav-btn" href="{{ url_for('index') }}">
+                <a class="nav-btn" href="/" onclick="return confirmNavigation()">
                     <i class="fas fa-arrow-left me-2"></i>Back Home
                 </a>
             </div>
@@ -267,178 +304,386 @@
     <h2>User Information Form</h2>
     <form id="userForm" method="POST" enctype="multipart/form-data" novalidate>
         <div class="mb-3">
-            <label for="name" class="form-label fw-semibold">Name:</label>
-            <input type="text" id="name" name="name" class="form-control" required placeholder="Enter your name" />
-            <div class="invalid-feedback">Please enter your name.</div>
+            <label for="name" class="form-label fw-semibold">Name: <span class="text-danger">*</span></label>
+            <input type="text" id="name" name="name" class="form-control" required
+                   placeholder="Enter your full name" maxlength="100" autocomplete="name" />
+            <div class="invalid-feedback">Please enter your name (max 100 characters).</div>
         </div>
+       
         <div class="mb-3">
-            <label for="email" class="form-label fw-semibold">Email:</label>
-            <input type="email" id="email" name="email" class="form-control" required placeholder="Enter your email" />
+            <label for="email" class="form-label fw-semibold">Email: <span class="text-danger">*</span></label>
+            <input type="email" id="email" name="email" class="form-control" required
+                   placeholder="Enter your email address" maxlength="255" autocomplete="email" />
             <div class="invalid-feedback">Please enter a valid email address.</div>
         </div>
-        <!-- Hidden fields for latitude, longitude, and ward_id -->
+       
+        <!-- Hidden fields for coordinates -->
         <input type="hidden" id="latitude" name="latitude" />
         <input type="hidden" id="longitude" name="longitude" />
         <input type="hidden" id="ward_id" name="ward_id" />
+       
         <div class="mb-3">
             <button type="button" id="getLocationButton" class="btn btn-outline-primary w-100">
-                <i class="fas fa-location-dot me-2"></i>Get Location
+                <i class="fas fa-location-dot me-2"></i>Get My Location
             </button>
+            <div class="form-text">Click to automatically detect your location and ward</div>
         </div>
+       
         <div class="mb-3">
-            <label for="ward" class="form-label fw-semibold">Area (Ward):</label>
-            <input type="text" id="ward" name="ward" class="form-control" readonly placeholder="Location will fill here" />
+            <label for="ward" class="form-label fw-semibold">Area (Ward): <span class="text-danger">*</span></label>
+            <input type="text" id="ward" name="ward" class="form-control" readonly
+                   placeholder="Use 'Get My Location' to fill this automatically" />
+            <div class="form-text">Your ward will be automatically determined from your location</div>
         </div>
+       
         <div class="mb-3">
-            <label for="image" class="form-label fw-semibold">Upload Image:</label>
-            <input type="file" id="image" name="image" accept="image/*" class="form-control" />
+            <label for="image" class="form-label fw-semibold">Upload Image (Optional):</label>
+            <input type="file" id="image" name="image" accept="image/*" class="form-control"
+                   capture="environment" />
+            <div class="form-text">Maximum file size: 5MB. Supports JPG, PNG formats.</div>
         </div>
-        <button type="submit" class="btn btn-primary w-100">Submit</button>
+       
+        <button type="submit" class="btn btn-primary w-100" id="submitBtn">
+            <i class="fas fa-paper-plane me-2"></i>Submit Information
+        </button>
     </form>
-    <div id="loader" class="loader" aria-label="Loading"></div>
-    <div id="successMessage" class="alert alert-success mt-4" role="alert">
-        Data inserted and email sent successfully!
+   
+    <div id="successMessage" class="alert alert-success" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        <span id="successText">Data submitted successfully!</span>
     </div>
-    <div id="errorMessage" class="alert alert-danger mt-4" role="alert"></div>
+   
+    <div id="errorMessage" class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <span id="errorText"></span>
+    </div>
 </div>
 
 <script>
     (function () {
         "use strict";
 
+        // DOM elements
         const form = document.getElementById('userForm');
         const getLocationBtn = document.getElementById('getLocationButton');
-        const loader = document.getElementById('loader');
+        const submitBtn = document.getElementById('submitBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
         const successMessage = document.getElementById('successMessage');
         const errorMessage = document.getElementById('errorMessage');
+        const successText = document.getElementById('successText');
+        const errorText = document.getElementById('errorText');
+        const connectionStatus = document.getElementById('connectionStatus');
+       
+        // Form inputs
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
         const wardInput = document.getElementById('ward');
         const wardIdInput = document.getElementById('ward_id');
         const latitudeInput = document.getElementById('latitude');
         const longitudeInput = document.getElementById('longitude');
+        const imageInput = document.getElementById('image');
 
-        // Show loader helper
-        function showLoader() { loader.style.display = 'block'; }
-        function hideLoader() { loader.style.display = 'none'; }
+        // Loading state management
+        function showLoading() {
+            loadingOverlay.style.display = 'flex';
+            submitBtn.disabled = true;
+            getLocationBtn.disabled = true;
+        }
 
-        // Reset messages
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+            submitBtn.disabled = false;
+            getLocationBtn.disabled = false;
+        }
+
+        // Message management
         function resetMessages() {
             successMessage.style.display = 'none';
             errorMessage.style.display = 'none';
-            errorMessage.textContent = '';
+            errorText.textContent = '';
         }
 
-        // Geolocation and ward fetch
-        getLocationBtn.addEventListener('click', () => {
+        function showSuccess(message) {
             resetMessages();
+            successText.textContent = message;
+            successMessage.style.display = 'block';
+            successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
 
-            if (!navigator.geolocation) {
-                alert('❌ Geolocation is not supported by your browser.');
-                return;
+        function showError(message) {
+            resetMessages();
+            errorText.textContent = message;
+            errorMessage.style.display = 'block';
+            errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Connection monitoring
+        function updateConnectionStatus() {
+            if (navigator.onLine) {
+                connectionStatus.textContent = 'Online';
+                connectionStatus.className = 'connection-status connection-online';
+                connectionStatus.style.display = 'block';
+                setTimeout(() => {
+                    connectionStatus.style.display = 'none';
+                }, 2000);
+            } else {
+                connectionStatus.textContent = 'Offline';
+                connectionStatus.className = 'connection-status connection-offline';
+                connectionStatus.style.display = 'block';
             }
+        }
 
-            showLoader();
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
 
-            navigator.geolocation.getCurrentPosition(
-                position => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-
-                    latitudeInput.value = lat;
-                    longitudeInput.value = lon;
-
-                    fetch(`/user/get_ward?lat=${lat}&lon=${lon}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.ward_id && data.ward_name && data.distance === undefined) {
-                                wardInput.value = data.ward_name;
-                                wardIdInput.value = data.ward_id;
-                            } else {
-                                // No exact ward found or outside area
-                                wardInput.value = '';
-                                wardIdInput.value = '';
-                                alert('🚫 You are outside Rabakavi-Banahatti municipal limits.');
-                            }
-                        })
-                        .catch(() => {
-                            wardInput.value = '';
-                            wardIdInput.value = '';
-                            alert('🚨 Error fetching ward information.');
-                        })
-                        .finally(() => {
-                            hideLoader();
-                        });
-                },
-                error => {
-                    hideLoader();
-                    switch (error.code) {
-                        case error.PERMISSION_DENIED:
-                            alert("❌ Location permission denied by user.");
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            alert("❌ Location information is unavailable.");
-                            break;
-                        case error.TIMEOUT:
-                            alert("❌ The request to get your location timed out.");
-                            break;
-                        default:
-                            alert("❌ An unknown error occurred while fetching location.");
-                            break;
-                    }
+        // Enhanced fetch with timeout and retry
+        async function fetchWithTimeout(url, options = {}, timeout = 30000) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+           
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                return response;
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    throw new Error('Request timed out. Please check your connection and try again.');
                 }
-            );
+                throw error;
+            }
+        }
+
+        // Enhanced geolocation with better error handling
+        function getCurrentLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Geolocation is not supported by your device.'));
+                    return;
+                }
+
+                const options = {
+                    enableHighAccuracy: true,
+                    timeout: 15000, // 15 seconds
+                    maximumAge: 300000 // 5 minutes cache
+                };
+
+                navigator.geolocation.getCurrentPosition(
+                    position => resolve(position),
+                    error => {
+                        let message;
+                        switch (error.code) {
+                            case error.PERMISSION_DENIED:
+                                message = "Location access denied. Please enable location services and try again.";
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                message = "Location information is unavailable. Please try again.";
+                                break;
+                            case error.TIMEOUT:
+                                message = "Location request timed out. Please try again.";
+                                break;
+                            default:
+                                message = "An unknown error occurred while getting your location.";
+                                break;
+                        }
+                        reject(new Error(message));
+                    },
+                    options
+                );
+            });
+        }
+
+        // Input validation
+        function validateInputs() {
+            const name = nameInput.value.trim();
+            const email = emailInput.value.trim();
+           
+            if (!name || name.length < 2) {
+                showError('Please enter a valid name (at least 2 characters).');
+                nameInput.focus();
+                return false;
+            }
+           
+            if (!email || !email.includes('@') || email.length < 5) {
+                showError('Please enter a valid email address.');
+                emailInput.focus();
+                return false;
+            }
+           
+            if (!latitudeInput.value || !longitudeInput.value || !wardInput.value) {
+                showError('Please use the "Get My Location" button to determine your ward.');
+                return false;
+            }
+           
+            return true;
+        }
+
+        // Image validation
+        function validateImage() {
+            if (!imageInput.files || !imageInput.files[0]) {
+                return true; // Optional field
+            }
+           
+            const file = imageInput.files[0];
+            const maxSize = 5 * 1024 * 1024; // 5MB
+           
+            if (file.size > maxSize) {
+                showError('Image file is too large. Please select an image smaller than 5MB.');
+                return false;
+            }
+           
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!allowedTypes.includes(file.type)) {
+                showError('Please select a valid image file (JPG, PNG, or GIF).');
+                return false;
+            }
+           
+            return true;
+        }
+
+        // Get location event handler
+        getLocationBtn.addEventListener('click', async () => {
+            resetMessages();
+           
+            try {
+                showLoading();
+                getLocationBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Getting Location...';
+               
+                const position = await getCurrentLocation();
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+               
+                console.log('Location obtained:', { lat, lon });
+               
+                latitudeInput.value = lat;
+                longitudeInput.value = lon;
+               
+                // Fetch ward information
+                const response = await fetchWithTimeout(`/user/get_ward?lat=${lat}&lon=${lon}`);
+                const data = await response.json();
+               
+                if (response.ok && data.ward_id && data.ward_name) {
+                    wardInput.value = data.ward_name;
+                    wardIdInput.value = data.ward_id;
+                    showSuccess(`Location found! You are in ${data.ward_name}.`);
+                } else {
+                    wardInput.value = '';
+                    wardIdInput.value = '';
+                    latitudeInput.value = '';
+                    longitudeInput.value = '';
+                    showError(data.error || 'You are outside the Rabakavi-Banahatti municipal limits.');
+                }
+               
+            } catch (error) {
+                console.error('Location error:', error);
+                showError(error.message || 'Failed to get your location. Please try again.');
+               
+                // Clear location data on error
+                wardInput.value = '';
+                wardIdInput.value = '';
+                latitudeInput.value = '';
+                longitudeInput.value = '';
+            } finally {
+                hideLoading();
+                getLocationBtn.innerHTML = '<i class="fas fa-location-dot me-2"></i>Get My Location';
+            }
         });
 
-        // Form validation and submission
-        form.addEventListener('submit', (e) => {
+        // Form submission with enhanced error handling
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
             resetMessages();
-
-            // Simple validation
+           
+            // Validate form
             if (!form.checkValidity()) {
-                e.stopPropagation();
                 form.classList.add('was-validated');
                 return;
             }
-
-            if (!latitudeInput.value || !longitudeInput.value || !wardInput.value) {
-                errorMessage.textContent = 'Please use "Get Location" button to fill location details.';
-                errorMessage.style.display = 'block';
+           
+            if (!validateInputs() || !validateImage()) {
                 return;
             }
-
-            const formData = new FormData(form);
-            showLoader();
-
-            fetch('/user/submit_user', {
-                method: 'POST',
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                hideLoader();
+           
+            try {
+                showLoading();
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting...';
+               
+                const formData = new FormData(form);
+               
+                // Log form data for debugging (remove in production)
+                console.log('Submitting form data:');
+                for (let [key, value] of formData.entries()) {
+                    if (key !== 'image') {
+                        console.log(key, value);
+                    } else {
+                        console.log('image', value ? `${value.name} (${value.size} bytes)` : 'null');
+                    }
+                }
+               
+                const response = await fetchWithTimeout('/user/submit_user', {
+                    method: 'POST',
+                    body: formData
+                }, 60000); // 60 second timeout for file uploads
+               
+                const data = await response.json();
+               
                 if (data.success) {
-                    successMessage.style.display = 'block';
-                    errorMessage.style.display = 'none';
+                    showSuccess(data.message || 'Your information has been submitted successfully!');
+                   
+                    // Reset form
                     form.reset();
                     wardInput.value = '';
                     wardIdInput.value = '';
                     latitudeInput.value = '';
                     longitudeInput.value = '';
                     form.classList.remove('was-validated');
+                   
                 } else {
-                    errorMessage.textContent = data.error || 'Submission failed. Please try again.';
-                    errorMessage.style.display = 'block';
-                    successMessage.style.display = 'none';
+                    console.error('Submission error:', data);
+                    showError(data.error || 'Submission failed. Please try again.');
                 }
-            })
-            .catch(() => {
-                hideLoader();
-                errorMessage.textContent = 'An unexpected error occurred.';
-                errorMessage.style.display = 'block';
-                successMessage.style.display = 'none';
-            });
+               
+            } catch (error) {
+                console.error('Network error:', error);
+                let errorMsg = 'Network error. Please check your connection and try again.';
+               
+                if (error.message.includes('timeout')) {
+                    errorMsg = 'Request timed out. Please check your connection and try again.';
+                } else if (!navigator.onLine) {
+                    errorMsg = 'You appear to be offline. Please check your internet connection.';
+                }
+               
+                showError(errorMsg);
+            } finally {
+                hideLoading();
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Submit Information';
+            }
         });
+
+        // Prevent accidental navigation
+        window.confirmNavigation = function() {
+            const hasData = nameInput.value || emailInput.value || latitudeInput.value;
+            if (hasData) {
+                return confirm('You have unsaved changes. Are you sure you want to leave?');
+            }
+            return true;
+        };
+
+        // Prevent form resubmission on page refresh
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+
+        console.log('Form initialized successfully');
+       
     })();
 </script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>
