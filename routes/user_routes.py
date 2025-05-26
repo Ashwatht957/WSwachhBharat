@@ -305,12 +305,35 @@ def submit_user():
             worker = staff_cursor.fetchone()
             staff_cursor.close()
 
+           # ...existing code...
             if not worker:
                 print(f"[WARN] No worker assigned to ward_id {ward_id}")
+
+                # Send email to the user notifying no worker assigned
+                try:
+                    user_msg = Message(
+                        subject="Swachh Bharat Abhiyan: No Worker Assigned Yet",
+                        sender="swachhindiamission@gmail.com",
+                        recipients=[email],
+                        body=(
+                            f"Dear {name},\n\n"
+                            f"Thank you for your submission regarding ward {ward_name} (ID: {ward_id}).\n"
+                            "Right now, no worker is assigned for this ward. "
+                            "Soon we will assign a worker. If no action is taken in a reasonable time, "
+                            "please call our helpline: 1800200300.\n\n"
+                            "Thank you for supporting Swachh Bharat Abhiyan."
+                        )
+                    )
+                    mail.send(user_msg)
+                    print(f"[DEBUG] Notification email sent to user: {email}")
+                except Exception as user_email_err:
+                    print(f"[ERROR] Failed to send notification email to user: {user_email_err}")
+
                 return jsonify({
                     "success": True,
-                    "message": "Submission successful, but no worker assigned to this ward"
+                    "message": "Submission successful, soon we will assign a worker for this ward"
                 })
+# ...existing code...
 
             # Send email notification
             msg = Message(
